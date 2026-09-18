@@ -31,19 +31,19 @@ public class RawInputDigitizerContact
         }
     }
 
-    public int X { get; }
-    public int Y { get; }
+    public uint X { get; }
+    public uint Y { get; }
     public int MinX { get; }
     public int MinY { get; }
     public int MaxX { get; }
     public int MaxY { get; }
-    public int? Pressure { get; }
+    public uint? Pressure { get; }
     public int? MaxPressure { get; }
     public bool? IsInverted => button.IsInverted;
     public bool? IsButtonDown => button.IsDown;
-    public int? Width { get; }
-    public int? Height { get; }
-    public int? Identifier { get; }
+    public uint? Width { get; }
+    public uint? Height { get; }
+    public uint? Identifier { get; }
 
     RawInputDigitizerContact(
         RawInputDigitizerButton button,

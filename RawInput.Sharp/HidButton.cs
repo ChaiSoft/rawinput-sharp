@@ -25,9 +25,9 @@ public class HidButton
     }
 
     public HidButtonState GetState(ArraySegment<byte> report) =>
-        GetState(report.ToArray(), report.Count);
+        GetState(report.ToArray(), (uint)report.Count);
 
-    public HidButtonState GetState(byte[] report, int reportLength) =>
+    public HidButtonState GetState(byte[] report, uint reportLength) =>
         new(this, report, reportLength);
 
     public override string ToString() =>

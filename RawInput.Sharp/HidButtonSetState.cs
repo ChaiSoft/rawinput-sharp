@@ -8,7 +8,7 @@ namespace Linearstar.Windows.RawInput;
 public class HidButtonSetState : IEnumerable<HidButtonState>
 {
     readonly byte[] report;
-    readonly int reportLength;
+    readonly uint reportLength;
 
     public HidButtonSet ButtonSet { get; }
 
@@ -17,11 +17,11 @@ public class HidButtonSetState : IEnumerable<HidButtonState>
         get
         {
             fixed (void* preparsedData = ButtonSet.reader.PreparsedData)
-                return HidP.GetUsages((IntPtr)preparsedData, HidPReportType.Input, ButtonSet.buttonCaps, report, reportLength);
+                return HidP.GetUsages((nint)preparsedData, HidPReportType.HidP_Input, ButtonSet.buttonCaps, report, reportLength);
         }
     }
 
-    internal HidButtonSetState(HidButtonSet buttonSet, byte[] report, int reportLength)
+    internal HidButtonSetState(HidButtonSet buttonSet, byte[] report, uint reportLength)
     {
         ButtonSet = buttonSet;
         this.report = report;

@@ -13,7 +13,7 @@ public class RawInputDigitizer : RawInputHid
     internal RawInputDigitizer(RawInputDeviceHandle device, RawInputDeviceInfo deviceInfo)
         : base(device, deviceInfo)
     {
-        if (!IsSupported(deviceInfo.Hid.UsageAndPage)) throw new ArgumentException($"UsagePage and Usage {deviceInfo.Hid.UsageAndPage} is not supported as a digitizer.", nameof(deviceInfo));
+        if (!IsSupported(deviceInfo.hid.UsageAndPage)) throw new ArgumentException($"UsagePage and Usage {deviceInfo.hid.UsageAndPage} is not supported as a digitizer.", nameof(deviceInfo));
     }
 
     public static bool IsSupported(HidUsageAndPage usageAndPage) =>

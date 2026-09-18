@@ -13,7 +13,7 @@ public class RawInputDigitizerData : RawInputHidData
     
     public RawInputDigitizerContact[] Contacts { get; }
 
-    public RawInputDigitizerData(RawInputHeader header, RawHid hid)
+    internal RawInputDigitizerData(RawInputHeader header, RawHid hid)
         : base(header, hid)
     {
         if (Device is not RawInputDigitizer digitizer) throw new ArgumentException($"Device specified in the {nameof(header)} was not a valid digitizer.", nameof(header));
@@ -30,10 +30,10 @@ public class RawInputDigitizerData : RawInputHidData
             .SelectMany(x => x)
             .Where(x => x.Value.LinkUsageAndPage == digitizer.UsageAndPage && x.Value.UsageAndPage == RawInputDigitizer.UsageContactCount)
             .ToArray();
-        var contactsCount = contactsCountUsages.Select(x => x.CurrentValue).DefaultIfEmpty(1).Max();
+        var contactsCount = contactsCountUsages.Select(x => x.CurrentValue).DefaultIfEmpty(1U).Max();
 
         Contacts = EnumerateContacts().ToArray();
-        this.ContactsCount = contactsCountUsages.Any() ? contactsCount : Math.Min(Contacts.Length, 1);
+        this.ContactsCount = contactsCountUsages.Any() ? (int)contactsCount : Math.Min(Contacts.Length, 1);
         this.MaxContactsCount = contactsCountUsages.Select(x => x.Value.MaxValue).DefaultIfEmpty(1).Max();
 
         IEnumerable<RawInputDigitizerContact> EnumerateContacts()

@@ -1,33 +1,35 @@
-﻿using System;
+﻿global using RawInputHandle = Windows.Win32.UI.Input.HRAWINPUT;
 
-namespace Linearstar.Windows.RawInput.Native;
+//using System;
 
-/// <summary>
-/// HRAWINPUT
-/// </summary>
-public readonly struct RawInputHandle : IEquatable<RawInputHandle>
-{
-    readonly IntPtr value;
+//namespace Linearstar.Windows.RawInput.Native;
 
-    public static RawInputHandle Zero => (RawInputHandle)IntPtr.Zero;
+///// <summary>
+///// HRAWINPUT
+///// </summary>
+//public readonly struct RawInputHandle : IEquatable<RawInputHandle>
+//{
+//    readonly IntPtr value;
 
-    RawInputHandle(IntPtr value) => this.value = value;
+//    public static RawInputHandle Zero => (RawInputHandle)IntPtr.Zero;
 
-    public static IntPtr GetRawValue(RawInputHandle handle) => handle.value;
+//    RawInputHandle(IntPtr value) => this.value = value;
 
-    public static explicit operator RawInputHandle(IntPtr value) => new(value);
+//    public static IntPtr GetRawValue(RawInputHandle handle) => handle.value;
 
-    public static bool operator ==(RawInputHandle a, RawInputHandle b) => a.Equals(b);
+//    public static explicit operator RawInputHandle(IntPtr value) => new(value);
 
-    public static bool operator !=(RawInputHandle a, RawInputHandle b) => !a.Equals(b);
+//    public static bool operator ==(RawInputHandle a, RawInputHandle b) => a.Equals(b);
 
-    public bool Equals(RawInputHandle other) => value.Equals(other.value);
+//    public static bool operator !=(RawInputHandle a, RawInputHandle b) => !a.Equals(b);
 
-    public override bool Equals(object? obj) =>
-        obj is RawInputHandle other &&
-        Equals(other);
+//    public bool Equals(RawInputHandle other) => value.Equals(other.value);
 
-    public override int GetHashCode() => value.GetHashCode();
+//    public override bool Equals(object? obj) =>
+//        obj is RawInputHandle other &&
+//        Equals(other);
 
-    public override string ToString() => value.ToString();
-}
+//    public override int GetHashCode() => value.GetHashCode();
+
+//    public override string ToString() => value.ToString();
+//}

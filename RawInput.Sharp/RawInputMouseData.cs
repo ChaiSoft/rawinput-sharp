@@ -5,9 +5,9 @@ namespace Linearstar.Windows.RawInput;
 
 public class RawInputMouseData : RawInputData
 {
-    public RawMouse Mouse { get; }
+    internal RawMouse Mouse { get; }
 
-    public RawInputMouseData(RawInputHeader header, RawMouse mouse)
+    internal RawInputMouseData(RawInputHeader header, RawMouse mouse)
         : base(header) =>
         Mouse = mouse;
 

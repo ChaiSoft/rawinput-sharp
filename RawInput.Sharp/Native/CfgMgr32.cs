@@ -1,56 +1,37 @@
 ﻿using System;
 using System.Runtime.InteropServices;
+using System.Runtime.Versioning;
+using Windows.Win32;
+using Windows.Win32.Devices.DeviceAndDriverInstallation;
 
 namespace Linearstar.Windows.RawInput.Native;
 
-public static partial class CfgMgr32
+[SupportedOSPlatform("windows6.0.6000")]
+internal static partial class CfgMgr32
 {
-    [LibraryImport("cfgmgr32", EntryPoint = "CM_Locate_DevNodeW", StringMarshalling = StringMarshalling.Utf16)]
-    private static partial ConfigReturnValue CM_Locate_DevNode(out IntPtr pdnDevInst, string pDeviceID, LocateDevNodeFlags ulFlags);
-
-    [LibraryImport("cfgmgr32", EntryPoint = "CM_Get_DevNode_PropertyW")]
-    private static partial ConfigReturnValue CM_Get_DevNode_Property(IntPtr dnDevInst, in DevicePropertyKey propertyKey, out uint propertyType, IntPtr propertyBuffer, ref uint propertyBufferSize, uint ulFlags);
-
-    /// <summary>
-    /// CM_LOCATE_DEVNODE_*
-    /// </summary>
-    [Flags]
-    public enum LocateDevNodeFlags : uint
-    {
-        /// <summary>
-        /// CM_LOCATE_DEVNODE_NORMAL
-        /// </summary>
-        Normal = 0x0,
-        /// <summary>
-        /// CM_LOCATE_DEVNODE_PHANTOM
-        /// </summary>
-        Phantom = 0x1,
-        /// <summary>
-        /// CM_LOCATE_DEVNODE_CANCELREMOVE
-        /// </summary>
-        CancelRemove = 0x2,
-        /// <summary>
-        /// CM_LOCATE_DEVNODE_NOVALIDATION
-        /// </summary>
-        NoValidation = 0x4,
-    }
-
-    public static DeviceInstanceHandle LocateDevNode(string devicePath, LocateDevNodeFlags flags)
+    public static DeviceInstanceHandle LocateDevNode(string devicePath, CM_LOCATE_DEVNODE_FLAGS flags)
     {
         TryLocateDevNode(devicePath, flags, out var device).EnsureSuccess();
 
         return device;
     }
 
-    public static ConfigReturnValue TryLocateDevNode(string devicePath, LocateDevNodeFlags flags, out DeviceInstanceHandle device)
+    public static ConfigReturnValue TryLocateDevNode(string devicePath, CM_LOCATE_DEVNODE_FLAGS flags, out DeviceInstanceHandle device)
     {
-        var result = CM_Locate_DevNode(out var devInst, devicePath, flags);
+        unsafe
+        {
+            fixed(char* pDevicePath = devicePath)
+            {
+                var result = PInvoke.CM_Locate_DevNode(out var devInst, pDevicePath, flags);
 
-        device = result == ConfigReturnValue.Success
-            ? (DeviceInstanceHandle)devInst
-            : DeviceInstanceHandle.Zero;
+                device = result == ConfigReturnValue.CR_SUCCESS
+                    ? (DeviceInstanceHandle)devInst
+                    : DeviceInstanceHandle.Zero;
 
-        return result;
+                return result;
+            }
+        }
+        
     }
 
     public static string? GetDevNodePropertyString(DeviceInstanceHandle device, in DevicePropertyKey propertyKey)
@@ -60,41 +41,33 @@ public static partial class CfgMgr32
         return value;
     }
 
+    private const ushort MAX_STACK = 4096;
+
     public static ConfigReturnValue TryGetDevNodePropertyString(DeviceInstanceHandle device, in DevicePropertyKey propertyKey, out string? value)
     {
         var devInst = DeviceInstanceHandle.GetRawValue(device);
         uint size = 0;
 
-        var result = CM_Get_DevNode_Property(devInst, in propertyKey, out _, IntPtr.Zero, ref size, 0);
-        if (result != ConfigReturnValue.Success &&
-            result != ConfigReturnValue.BufferSmall)
+        var result = PInvoke.CM_Get_DevNode_Property(devInst, in propertyKey, out _, default, ref size, 0);
+        if (result != ConfigReturnValue.CR_SUCCESS &&
+            result != ConfigReturnValue.CR_BUFFER_SMALL)
         {
             value = null;
             return result;
         }
 
-        var buffer = Marshal.AllocHGlobal((int)size);
+        var buffer = size <= MAX_STACK ? stackalloc byte[(int)size] : new byte[size];
+        result = PInvoke.CM_Get_DevNode_Property(devInst, in propertyKey, out _, buffer, ref size, 0);
+        if (result != ConfigReturnValue.CR_SUCCESS)
+            value = null;
+        else
+            value = MarshalEx.PtrToStringUni(buffer);
 
-        try
-        {
-            result = CM_Get_DevNode_Property(devInst, in propertyKey, out _, buffer, ref size, 0);
-            if (result != ConfigReturnValue.Success)
-            {
-                value = null;
-                return result;
-            }
-
-            value = Marshal.PtrToStringUni(buffer);
-            return ConfigReturnValue.Success;
-        }
-        finally
-        {
-            Marshal.FreeHGlobal(buffer);
-        }
+        return result;
     }
 
     static void EnsureSuccess(this ConfigReturnValue result)
     {
-        if (result != ConfigReturnValue.Success) throw new InvalidOperationException(result.ToString());
+        if (result != ConfigReturnValue.CR_SUCCESS) throw new InvalidOperationException(result.ToString());
     }
 }

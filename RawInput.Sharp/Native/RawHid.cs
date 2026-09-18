@@ -1,6 +1,7 @@
 ﻿using System;
 using System.Linq;
 using System.Runtime.InteropServices;
+using Windows.Win32.UI.Input;
 
 namespace Linearstar.Windows.RawInput.Native;
 
@@ -17,15 +18,14 @@ public struct RawHid
     public int Count => dwCount;
     public unsafe byte[] RawData => rawData;
 
-    public static unsafe RawHid FromPointer(void* ptr)
+    public static RawHid FromSpan(ReadOnlySpan<byte> span)
     {
-        var result = new RawHid();
-        var intPtr = (int*)ptr;
+        ref readonly RAWHID rawHid = ref MemoryMarshal.Cast<byte, RAWHID>(span)[0];
 
-        result.dwSizeHid = intPtr[0];
-        result.dwCount = intPtr[1];
-        result.rawData = new byte[result.ElementSize * result.Count];
-        Marshal.Copy(new IntPtr(&intPtr[2]), result.rawData, 0, result.rawData.Length);
+        var result = new RawHid();
+        result.dwSizeHid = checked((int)rawHid.dwSizeHid);
+        result.dwCount = checked((int)rawHid.dwCount);
+        result.rawData = rawHid.bRawData.AsSpan((int)rawHid.dwCount).ToArray();
 
         return result;
     }
@@ -35,9 +35,11 @@ public struct RawHid
         var elementSize = ElementSize;
         var rawDataArray = RawData;
 
-        return Enumerable.Range(0, Count)
-                         .Select(x => new ArraySegment<byte>(rawDataArray, elementSize * x, elementSize))
-                         .ToArray();
+        var result = new ArraySegment<byte>[Count];
+
+        for(int i = 0; i < Count; ++i)
+            result[i] = new ArraySegment<byte>(RawData, elementSize * i, elementSize);
+        return result;
     }
         
     public unsafe byte[] ToStructure()

@@ -34,9 +34,9 @@ public class HidValueSet : IEnumerable<HidValue>
     }
 
     public HidValueSetState GetStates(ArraySegment<byte> report) =>
-        GetStates(report.ToArray(), report.Count);
+        GetStates(report.ToArray(), (uint)report.Count);
 
-    public HidValueSetState GetStates(byte[] report, int reportLength) => new(this, report, reportLength);
+    public HidValueSetState GetStates(byte[] report, uint reportLength) => new(this, report, reportLength);
 
     public override string ToString() =>
         $"{ReportId}, {LinkCollection}, Link: {{{LinkUsageAndPage}}}, UsagePage: {{{UsagePage}}}, Count: {ValueCount}";

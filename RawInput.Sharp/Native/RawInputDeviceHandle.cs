@@ -1,33 +1,45 @@
 ﻿using System;
 
-namespace Linearstar.Windows.RawInput.Native;
-
-/// <summary>
-/// HANDLE
-/// </summary>
-public readonly struct RawInputDeviceHandle : IEquatable<RawInputDeviceHandle>
+namespace Linearstar.Windows.RawInput.Native
 {
-    readonly IntPtr value;
 
-    public static RawInputDeviceHandle Zero => (RawInputDeviceHandle)IntPtr.Zero;
+    /// <summary>
+    /// HANDLE
+    /// </summary>
+    public readonly struct RawInputDeviceHandle : IEquatable<RawInputDeviceHandle>
+    {
+        readonly IntPtr value;
 
-    RawInputDeviceHandle(IntPtr value) => this.value = value;
+        public static RawInputDeviceHandle Zero => (RawInputDeviceHandle)IntPtr.Zero;
 
-    public static IntPtr GetRawValue(RawInputDeviceHandle handle) => handle.value;
+        RawInputDeviceHandle(IntPtr value) => this.value = value;
 
-    public static explicit operator RawInputDeviceHandle(IntPtr value) => new(value);
+        public static IntPtr GetRawValue(RawInputDeviceHandle handle) => handle.value;
 
-    public static bool operator ==(RawInputDeviceHandle a, RawInputDeviceHandle b) => a.Equals(b);
+        public static explicit operator RawInputDeviceHandle(IntPtr value) => new(value);
 
-    public static bool operator !=(RawInputDeviceHandle a, RawInputDeviceHandle b) => !a.Equals(b);
+        public static bool operator ==(RawInputDeviceHandle a, RawInputDeviceHandle b) => a.Equals(b);
 
-    public bool Equals(RawInputDeviceHandle other) => value.Equals(other.value);
+        public static bool operator !=(RawInputDeviceHandle a, RawInputDeviceHandle b) => !a.Equals(b);
 
-    public override bool Equals(object? obj) =>
-        obj is RawInputDeviceHandle other &&
-        Equals(other);
+        public bool Equals(RawInputDeviceHandle other) => value.Equals(other.value);
 
-    public override int GetHashCode() => value.GetHashCode();
+        public override bool Equals(object? obj) =>
+            obj is RawInputDeviceHandle other &&
+            Equals(other);
 
-    public override string ToString() => value.ToString();
+        public override int GetHashCode() => value.GetHashCode();
+
+        public override string ToString() => value.ToString();
+    }
+}
+
+namespace Windows.Win32.Foundation
+{
+    using Linearstar.Windows.RawInput.Native;
+    internal readonly partial struct HANDLE
+    {
+        public static explicit operator RawInputDeviceHandle(HANDLE handle) => (RawInputDeviceHandle)(nint)handle;
+        public static implicit operator HANDLE(RawInputDeviceHandle handle) => (HANDLE)RawInputDeviceHandle.GetRawValue(handle);
+    }
 }

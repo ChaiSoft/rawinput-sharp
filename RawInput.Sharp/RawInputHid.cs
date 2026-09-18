@@ -1,5 +1,6 @@
 ﻿using System;
 using Linearstar.Windows.RawInput.Native;
+using Windows.Win32.UI.Input;
 
 namespace Linearstar.Windows.RawInput;
 
@@ -7,20 +8,20 @@ public class RawInputHid : RawInputDevice
 {
     readonly Lazy<HidReader> hidReader;
 
-    public override HidUsageAndPage UsageAndPage => DeviceInfo.Hid.UsageAndPage;
+    public override HidUsageAndPage UsageAndPage => DeviceInfo.hid.UsageAndPage;
 
-    public override int VendorId => DeviceInfo.Hid.VendorId;
+    public override uint VendorId => DeviceInfo.hid.dwVendorId;
 
-    public override int ProductId => DeviceInfo.Hid.ProductId;
+    public override uint ProductId => DeviceInfo.hid.dwProductId;
 
-    public int Version => DeviceInfo.Hid.VersionNumber;
+    public uint Version => DeviceInfo.hid.dwVersionNumber;
 
     public HidReader Reader => hidReader.Value;
 
     internal RawInputHid(RawInputDeviceHandle device, RawInputDeviceInfo deviceInfo)
         : base(device, deviceInfo)
     {
-        if (deviceInfo.Type != RawInputDeviceType.Hid) throw new ArgumentException($"Device type must be {RawInputDeviceType.Hid}.", nameof(deviceInfo));
+        if (deviceInfo.dwType != RID_DEVICE_INFO_TYPE.RIM_TYPEHID) throw new ArgumentException($"Device type must be {RawInputDeviceType.Hid}.", nameof(deviceInfo));
 
         hidReader = new Lazy<HidReader>(() => new HidReader(new HidPreparsedByteArrayData(GetPreparsedData())));
     }

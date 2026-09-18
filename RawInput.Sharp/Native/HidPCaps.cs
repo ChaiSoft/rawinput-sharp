@@ -1,30 +1,38 @@
-﻿using System.Runtime.InteropServices;
+﻿global using HidPCaps = Windows.Win32.Devices.HumanInterfaceDevice.HIDP_CAPS;
 
-namespace Linearstar.Windows.RawInput.Native;
-
-/// <summary>
-/// HIDP_CAPS
-/// </summary>
-[StructLayout(LayoutKind.Sequential)]
-public struct HidPCaps
+namespace Windows.Win32.Devices.HumanInterfaceDevice
 {
-    readonly ushort Usage;
-    readonly ushort UsagePage;
-    public ushort InputReportByteLength;
-    public ushort OutputReportByteLength;
-    public ushort FeatureReportByteLength;
-    [MarshalAs(UnmanagedType.ByValArray, SizeConst = 17)]
-    readonly ushort[] reserved;
-    public ushort NumberLinkCollectionNodes;
-    public ushort NumberInputButtonCaps;
-    public ushort NumberInputValueCaps;
-    public ushort NumberInputDataIndices;
-    public ushort NumberOutputButtonCaps;
-    public ushort NumberOutputValueCaps;
-    public ushort NumberOutputDataIndices;
-    public ushort NumberFeatureButtonCaps;
-    public ushort NumberFeatureValueCaps;
-    public ushort NumberFeatureDateIndices;
+    using Linearstar.Windows.RawInput;
 
-    public HidUsageAndPage UsageAndPage => new(UsagePage, Usage);
+    internal partial struct HIDP_CAPS
+    {
+        public HidUsageAndPage UsageAndPage => new(UsagePage, Usage);
+    }
 }
+
+///// <summary>
+///// HIDP_CAPS
+///// </summary>
+//[StructLayout(LayoutKind.Sequential)]
+//public struct HidPCaps
+//{
+//    readonly ushort Usage;
+//    readonly ushort UsagePage;
+//    public ushort InputReportByteLength;
+//    public ushort OutputReportByteLength;
+//    public ushort FeatureReportByteLength;
+//    [MarshalAs(UnmanagedType.ByValArray, SizeConst = 17)]
+//    readonly ushort[] reserved;
+//    public ushort NumberLinkCollectionNodes;
+//    public ushort NumberInputButtonCaps;
+//    public ushort NumberInputValueCaps;
+//    public ushort NumberInputDataIndices;
+//    public ushort NumberOutputButtonCaps;
+//    public ushort NumberOutputValueCaps;
+//    public ushort NumberOutputDataIndices;
+//    public ushort NumberFeatureButtonCaps;
+//    public ushort NumberFeatureValueCaps;
+//    public ushort NumberFeatureDateIndices;
+
+//    public HidUsageAndPage UsageAndPage => new(UsagePage, Usage);
+//}

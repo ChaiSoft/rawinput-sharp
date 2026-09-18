@@ -1,17 +1,19 @@
-﻿namespace Linearstar.Windows.RawInput.Native;
+﻿global using RawInputDeviceListItem = Windows.Win32.UI.Input.RAWINPUTDEVICELIST;
 
-/// <summary>
-/// RAWINPUTDEVICELIST
-/// </summary>
-public struct RawInputDeviceListItem
-{
-    /// <summary>
-    /// hDevice
-    /// </summary>
-    public RawInputDeviceHandle Device { get; set; }
+//namespace Linearstar.Windows.RawInput.Native;
 
-    /// <summary>
-    /// dwType
-    /// </summary>
-    public RawInputDeviceType Type { get; set; }
-}
+///// <summary>
+///// RAWINPUTDEVICELIST
+///// </summary>
+//public struct RawInputDeviceListItem
+//{
+//    /// <summary>
+//    /// hDevice
+//    /// </summary>
+//    public RawInputDeviceHandle Device { get; set; }
+
+//    /// <summary>
+//    /// dwType
+//    /// </summary>
+//    public RawInputDeviceType Type { get; set; }
+//}

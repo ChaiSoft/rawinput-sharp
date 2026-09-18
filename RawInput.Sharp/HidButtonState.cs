@@ -6,7 +6,7 @@ namespace Linearstar.Windows.RawInput;
 public class HidButtonState
 {
     readonly byte[] report;
-    readonly int reportLength;
+    readonly uint reportLength;
 
     public HidButton Button { get; }
 
@@ -16,14 +16,14 @@ public class HidButtonState
         {
             fixed (void* preparsedData = Button.reader.PreparsedData)
             {
-                var activeUsages = HidP.GetUsages((IntPtr)preparsedData, HidPReportType.Input, Button.buttonCaps, report, reportLength);
+                var activeUsages = HidP.GetUsages((IntPtr)preparsedData, HidPReportType.HidP_Input, Button.buttonCaps, report, reportLength);
 
                 return Array.IndexOf(activeUsages, Button.UsageAndPage.Usage) != -1;
             }
         }
     }
 
-    internal HidButtonState(HidButton button, byte[] report, int reportLength)
+    internal HidButtonState(HidButton button, byte[] report, uint reportLength)
     {
         Button = button;
         this.report = report;

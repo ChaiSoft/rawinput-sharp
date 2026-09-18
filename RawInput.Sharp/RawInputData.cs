@@ -1,6 +1,8 @@
 ﻿using System;
 using System.Linq;
 using Linearstar.Windows.RawInput.Native;
+using Windows.Win32.Foundation;
+using Windows.Win32.UI.Input;
 
 namespace Linearstar.Windows.RawInput;
 
@@ -8,14 +10,15 @@ public abstract class RawInputData
 {
     RawInputDevice? device;
 
-    public RawInputHeader Header { get; }
+    public RawInputDeviceHandle DeviceHandle => (RawInputDeviceHandle)Header.hDevice;
+    internal RawInputHeader Header { get; }
 
     public RawInputDevice? Device =>
-        device ??= Header.DeviceHandle != RawInputDeviceHandle.Zero
-            ? RawInputDevice.FromHandle(Header.DeviceHandle)
+        device ??= Header.hDevice != HANDLE.Null
+            ? RawInputDevice.FromHandle((RawInputDeviceHandle)Header.hDevice)
             : null;
 
-    protected RawInputData(RawInputHeader header)
+    private protected RawInputData(RawInputHeader header)
     {
         Header = header;
     }
@@ -23,24 +26,24 @@ public abstract class RawInputData
     public static RawInputData FromHandle(IntPtr lParam)
         => FromHandle((RawInputHandle)lParam);
 
-    public static RawInputData FromHandle(RawInputHandle rawInput)
+    internal static RawInputData FromHandle(RawInputHandle rawInput)
     {
         var header = User32.GetRawInputDataHeader(rawInput);
 
-        switch (header.Type)
+        switch ((RID_DEVICE_INFO_TYPE)header.dwType)
         {
-            case RawInputDeviceType.Mouse:
+            case RID_DEVICE_INFO_TYPE.RIM_TYPEMOUSE:
                 return new RawInputMouseData(header, User32.GetRawInputMouseData(rawInput, out _));
-            case RawInputDeviceType.Keyboard:
+            case RID_DEVICE_INFO_TYPE.RIM_TYPEKEYBOARD:
                 return new RawInputKeyboardData(header, User32.GetRawInputKeyboardData(rawInput, out _));
-            case RawInputDeviceType.Hid:
+            case RID_DEVICE_INFO_TYPE.RIM_TYPEHID:
                 return RawInputHidData.Create(header, User32.GetRawInputHidData(rawInput, out _));
             default:
                 throw new ArgumentException();
         }
     }
 
-    static unsafe RawInputData ParseRawInputBufferItem(byte* ptr)
+    private static unsafe RawInputData ParseRawInputBufferItem(byte* ptr)
     {
         var header = *(RawInputHeader*)ptr;
         var headerSize = MarshalEx.SizeOf<RawInputHeader>();
@@ -50,14 +53,15 @@ public abstract class RawInputData
         // https://docs.microsoft.com/en-us/windows/win32/api/winuser/nf-winuser-getrawinputbuffer#remarks
         if (EnvironmentEx.Is64BitProcess && EnvironmentEx.Is64BitOperatingSystem) dataPtr += 8;
 
-        switch (header.Type)
+        switch ((RID_DEVICE_INFO_TYPE)header.dwType)
         {
-            case RawInputDeviceType.Mouse:
+            case RID_DEVICE_INFO_TYPE.RIM_TYPEMOUSE:
                 return new RawInputMouseData(header, *(RawMouse*)dataPtr);
-            case RawInputDeviceType.Keyboard:
+            case RID_DEVICE_INFO_TYPE.RIM_TYPEKEYBOARD:
                 return new RawInputKeyboardData(header, *(RawKeyboard*)dataPtr);
-            case RawInputDeviceType.Hid:
-                return RawInputHidData.Create(header, RawHid.FromPointer(dataPtr));
+            case RID_DEVICE_INFO_TYPE.RIM_TYPEHID:
+                throw new NotImplementedException();
+                //return RawInputHidData.Create(header, RawHid.FromPointer(dataPtr));
             default:
                 throw new ArgumentException();
         }
@@ -65,28 +69,29 @@ public abstract class RawInputData
 
     public static unsafe RawInputData[] GetBufferedData(int bufferSize = 8)
     {
-        var itemSize = User32.GetRawInputBufferSize();
-        if (itemSize == 0) return new RawInputData[0];
+        throw new NotImplementedException();
+        //var itemSize = User32.GetRawInputBufferSize();
+        //if (itemSize == 0) return Array.Empty<RawInputData>();
 
-        var bytes = new byte[itemSize * bufferSize];
+        //var bytes = new byte[itemSize * bufferSize];
 
-        fixed (byte* bytesPtr = bytes)
-        {
-            var count = User32.GetRawInputBuffer((IntPtr)bytesPtr, (uint)bytes.Length);
-            if (count == 0) return new RawInputData[0];
+        //fixed (byte* bytesPtr = bytes)
+        //{
+        //    var count = User32.GetRawInputBuffer((IntPtr)bytesPtr, (uint)bytes.Length);
+        //    if (count == 0) return new RawInputData[0];
 
-            var result = new RawInputData[count];
+        //    var result = new RawInputData[count];
 
-            for (int i = 0, offset = 0; i < result.Length; i++)
-            {
-                var data = ParseRawInputBufferItem(bytesPtr + offset);
+        //    for (int i = 0, offset = 0; i < result.Length; i++)
+        //    {
+        //        var data = ParseRawInputBufferItem(bytesPtr + offset);
 
-                result[i] = data;
-                offset = Align(offset + data.Header.Size);
-            }
+        //        result[i] = data;
+        //        offset = Align(offset + data.Header.Size);
+        //    }
 
-            return result;
-        }
+        //    return result;
+        //}
     }
 
     protected static int Align(int x) => (x + IntPtr.Size - 1) & ~(IntPtr.Size - 1);

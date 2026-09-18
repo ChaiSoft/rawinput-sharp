@@ -32,9 +32,9 @@ public class HidButtonSet : IEnumerable<HidButton>
     }
 
     public HidButtonSetState GetStates(ArraySegment<byte> report) =>
-        GetStates(report.ToArray(), report.Count);
+        GetStates(report.ToArray(), (uint)report.Count);
 
-    public HidButtonSetState GetStates(byte[] report, int reportLength) =>
+    public HidButtonSetState GetStates(byte[] report, uint reportLength) =>
         new(this, report, reportLength);
 
     public override string ToString() =>

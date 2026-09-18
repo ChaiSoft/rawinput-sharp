@@ -1,6 +1,8 @@
 ﻿using System;
 using System.Linq;
 using Linearstar.Windows.RawInput.Native;
+using Windows.Win32.Devices.DeviceAndDriverInstallation;
+using Windows.Win32.UI.Input;
 
 namespace Linearstar.Windows.RawInput;
 
@@ -11,10 +13,10 @@ public abstract class RawInputDevice
     string? manufacturerName;
     string? serialNumber;
 
-    protected RawInputDeviceInfo DeviceInfo { get; }
+    private protected RawInputDeviceInfo DeviceInfo { get; }
 
     public RawInputDeviceHandle Handle { get; }
-    public RawInputDeviceType DeviceType => DeviceInfo.Type;
+    public RawInputDeviceType DeviceType => DeviceInfo.dwType.FromNative();
     public string? DevicePath { get; }
 
     public string? ManufacturerName
@@ -45,11 +47,11 @@ public abstract class RawInputDevice
     }
 
     public bool IsConnected =>
-        DevicePath != null && CfgMgr32.TryLocateDevNode(DevicePath, CfgMgr32.LocateDevNodeFlags.Normal, out _) == ConfigReturnValue.Success;
+        DevicePath != null && CfgMgr32.TryLocateDevNode(DevicePath, CM_LOCATE_DEVNODE_FLAGS.CM_LOCATE_DEVNODE_NORMAL, out _) == ConfigReturnValue.CR_SUCCESS;
 
     public abstract HidUsageAndPage UsageAndPage { get; }
-    public abstract int VendorId { get; }
-    public abstract int ProductId { get; }
+    public abstract uint VendorId { get; }
+    public abstract uint ProductId { get; }
 
     void GetAttributesOnce()
     {
@@ -84,14 +86,14 @@ public abstract class RawInputDevice
         var path = DevicePath.Substring(4).Replace('#', '\\');
         if (path.Contains("{")) path = path.Substring(0, path.IndexOf('{') - 1);
 
-        var device = CfgMgr32.LocateDevNode(path, CfgMgr32.LocateDevNodeFlags.Phantom);
+        var device = CfgMgr32.LocateDevNode(path, CM_LOCATE_DEVNODE_FLAGS.CM_LOCATE_DEVNODE_PHANTOM);
 
         manufacturerName ??= CfgMgr32.GetDevNodePropertyString(device, in DevicePropertyKey.DeviceManufacturer);
         productName ??= CfgMgr32.GetDevNodePropertyString(device, in DevicePropertyKey.DeviceFriendlyName);
         productName ??= CfgMgr32.GetDevNodePropertyString(device, in DevicePropertyKey.Name);
     }
 
-    protected RawInputDevice(RawInputDeviceHandle device, RawInputDeviceInfo deviceInfo)
+    private protected RawInputDevice(RawInputDeviceHandle device, RawInputDeviceInfo deviceInfo)
     {
         Handle = device;
         DevicePath = User32.GetRawInputDeviceName(device);
@@ -102,14 +104,14 @@ public abstract class RawInputDevice
     {
         var deviceInfo = User32.GetRawInputDeviceInfo(device);
 
-        switch (deviceInfo.Type)
+        switch (deviceInfo.dwType)
         {
-            case RawInputDeviceType.Mouse:
+            case RID_DEVICE_INFO_TYPE.RIM_TYPEMOUSE:
                 return new RawInputMouse(device, deviceInfo);
-            case RawInputDeviceType.Keyboard:
+            case RID_DEVICE_INFO_TYPE.RIM_TYPEKEYBOARD:
                 return new RawInputKeyboard(device, deviceInfo);
-            case RawInputDeviceType.Hid:
-                return RawInputDigitizer.IsSupported(deviceInfo.Hid.UsageAndPage)
+            case RID_DEVICE_INFO_TYPE.RIM_TYPEHID:
+                return RawInputDigitizer.IsSupported(deviceInfo.hid.UsageAndPage)
                     ? new RawInputDigitizer(device, deviceInfo)
                     : new RawInputHid(device, deviceInfo);
             default:
@@ -125,7 +127,7 @@ public abstract class RawInputDevice
     {
         var devices = User32.GetRawInputDeviceList();
 
-        return devices.Select(i => FromHandle(i.Device)).ToArray();
+        return devices.Select(i => FromHandle((RawInputDeviceHandle)i.hDevice)).ToArray();
     }
 
     public byte[] GetPreparsedData() =>

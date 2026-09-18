@@ -45,7 +45,7 @@ namespace RawInput.Sharp.SimpleExample.WPF
                 var data = RawInputData.FromHandle(lparam);
 
                 // You can identify the source device using Header.DeviceHandle or just Device.
-                var sourceDeviceHandle = data.Header.DeviceHandle;
+                var sourceDeviceHandle = data.DeviceHandle;
                 var sourceDevice = data.Device;
 
                 // The data will be an instance of either RawInputMouseData, RawInputKeyboardData, or RawInputHidData.
@@ -53,13 +53,13 @@ namespace RawInput.Sharp.SimpleExample.WPF
                 switch (data)
                 {
                     case RawInputMouseData mouse:
-                        Debug.WriteLine(mouse.Mouse);
+                        Debug.WriteLine(mouse.ToString());
                         break;
                     case RawInputKeyboardData keyboard:
-                        Debug.WriteLine(keyboard.Keyboard);
+                        Debug.WriteLine(keyboard.ToString());
                         break;
                     case RawInputHidData hid:
-                        Debug.WriteLine(hid.Hid);
+                        Debug.WriteLine(hid.ToString());
                         break;
                 }
             }

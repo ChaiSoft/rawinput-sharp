@@ -1,34 +1,19 @@
 ﻿using System;
 using System.Runtime.InteropServices;
 using System.Text;
+using Windows.Win32;
+using Windows.Win32.Foundation;
+using Windows.Win32.Storage.FileSystem;
 
 namespace Linearstar.Windows.RawInput.Native;
 
-public static partial class HidD
+internal static partial class HidD
 {
-    [LibraryImport("hid")]
-    [return: MarshalAs(UnmanagedType.U1)]
-    private static partial bool HidD_GetManufacturerString(IntPtr HidDeviceObject, IntPtr Buffer, uint BufferLength);
-
-    [LibraryImport("hid")]
-    [return: MarshalAs(UnmanagedType.U1)]
-    private static partial bool HidD_GetProductString(IntPtr HidDeviceObject, IntPtr Buffer, uint BufferLength);
-
-    [LibraryImport("hid")]
-    [return: MarshalAs(UnmanagedType.U1)]
-    private static partial bool HidD_GetSerialNumberString(IntPtr HidDeviceObject, IntPtr Buffer, uint BufferLength);
-
-    [LibraryImport("hid")]
-    [return: MarshalAs(UnmanagedType.U1)]
-    private static partial bool HidD_GetPreparsedData(IntPtr HidDeviceObject, out IntPtr PreparsedData);
-
-    [LibraryImport("hid")]
-    [return: MarshalAs(UnmanagedType.U1)]
-    private static partial bool HidD_FreePreparsedData(IntPtr PreparsedData);
+    private delegate BOOLEAN HidGetStringFunc(HANDLE HidDeviceObject, Span<byte> buffer);
 
     public static HidDeviceHandle OpenDevice(string devicePath)
     {
-        var deviceHandle = Kernel32.CreateFile(devicePath, Kernel32.ShareMode.Read | Kernel32.ShareMode.Write, Kernel32.CreateDisposition.OpenExisting);
+        var deviceHandle = Kernel32.CreateFile(devicePath, FILE_SHARE_MODE.FILE_SHARE_READ | FILE_SHARE_MODE.FILE_SHARE_WRITE, FILE_CREATION_DISPOSITION.OPEN_EXISTING);
 
         return (HidDeviceHandle)deviceHandle;
     }
@@ -37,8 +22,8 @@ public static partial class HidD
     {
         if (!Kernel32.TryCreateFile(
                 devicePath,
-                Kernel32.ShareMode.Read | Kernel32.ShareMode.Write,
-                Kernel32.CreateDisposition.OpenExisting,
+                FILE_SHARE_MODE.FILE_SHARE_READ | FILE_SHARE_MODE.FILE_SHARE_WRITE,
+                FILE_CREATION_DISPOSITION.OPEN_EXISTING,
                 out var deviceHandle))
         {
             device = HidDeviceHandle.Zero;
@@ -51,58 +36,27 @@ public static partial class HidD
 
     public static void CloseDevice(HidDeviceHandle device)
     {
-        var deviceHandle = HidDeviceHandle.GetRawValue(device);
-
-        Kernel32.CloseHandle(deviceHandle);
+        Kernel32.CloseHandle(device);
     }
 
-    public static string? GetManufacturerString(HidDeviceHandle device)
-    {
-        var deviceHandle = HidDeviceHandle.GetRawValue(device);
-
-        return GetString(deviceHandle, HidD_GetManufacturerString);
-    }
-
-    public static string? GetProductString(HidDeviceHandle device)
-    {
-        var deviceHandle = HidDeviceHandle.GetRawValue(device);
-
-        return GetString(deviceHandle, HidD_GetProductString);
-    }
-
-    public static string? GetSerialNumberString(HidDeviceHandle device)
-    {
-        var deviceHandle = HidDeviceHandle.GetRawValue(device);
-
-        return GetString(deviceHandle, HidD_GetSerialNumberString);
-    }
+    public static string? GetManufacturerString(HidDeviceHandle device) => GetString(device, PInvoke.HidD_GetManufacturerString);
+    public static string? GetProductString(HidDeviceHandle device) => GetString(device, PInvoke.HidD_GetProductString);
+    public static string? GetSerialNumberString(HidDeviceHandle device) => GetString(device, PInvoke.HidD_GetSerialNumberString);
 
     public static HidPreparsedData GetPreparsedData(HidDeviceHandle device)
     {
-        var deviceHandle = HidDeviceHandle.GetRawValue(device);
-
-        HidD_GetPreparsedData(deviceHandle, out var preparsedData);
-
-        return (HidPreparsedData)preparsedData;
+        PInvoke.HidD_GetPreparsedData(device, out var preparsedData);
+        return preparsedData;
     }
 
-    public static void FreePreparsedData(HidPreparsedData preparsedData)
+    public static void FreePreparsedData(HidPreparsedData preparsedData) => PInvoke.HidD_FreePreparsedData(preparsedData);
+
+    static unsafe string? GetString(HidDeviceHandle handle, HidGetStringFunc proc)
     {
-        HidD_FreePreparsedData((IntPtr)preparsedData);
-    }
+        Span<byte> buf = stackalloc byte[256];
+        if (!proc(handle, buf))
+            return null;
 
-    static unsafe string? GetString(IntPtr handle, Func<IntPtr, IntPtr, uint, bool> proc)
-    {
-        var buf = new byte[256];
-
-        fixed (byte* buffer = buf)
-        {
-            if (!proc(handle, (IntPtr)buffer, (uint)buf.Length))
-                return null;
-        }
-
-        var str = Encoding.Unicode.GetString(buf, 0, buf.Length);
-
-        return str.Contains("\0") ? str.Substring(0, str.IndexOf('\0')) : str;
+        return MarshalEx.PtrToStringUni(buf);
     }
 }

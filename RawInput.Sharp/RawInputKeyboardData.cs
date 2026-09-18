@@ -5,9 +5,9 @@ namespace Linearstar.Windows.RawInput;
 
 public class RawInputKeyboardData : RawInputData
 {
-    public RawKeyboard Keyboard { get; }
+    internal RawKeyboard Keyboard { get; }
 
-    public RawInputKeyboardData(RawInputHeader header, RawKeyboard keyboard)
+    internal RawInputKeyboardData(RawInputHeader header, RawKeyboard keyboard)
         : base(header) =>
         Keyboard = keyboard;
 

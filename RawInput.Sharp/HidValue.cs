@@ -37,9 +37,9 @@ public class HidValue
     }
 
     public HidValueState GetValue(ArraySegment<byte> report) =>
-        GetValue(report.ToArray(), report.Count);
+        GetValue(report.ToArray(), (uint)report.Count);
 
-    public HidValueState GetValue(byte[] report, int reportLength) => new(this, report, reportLength);
+    public HidValueState GetValue(byte[] report, uint reportLength) => new(this, report, reportLength);
 
     public override string ToString() =>
         $"{ReportId}, {LinkCollection}, Link: {{{LinkUsageAndPage}}}, Usage: {{{UsageAndPage}}}";

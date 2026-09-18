@@ -7,15 +7,15 @@ namespace Linearstar.Windows.RawInput.Native;
 /// </summary>
 public readonly struct DeviceInstanceHandle : IEquatable<DeviceInstanceHandle>
 {
-    readonly IntPtr value;
+    readonly uint value;
 
-    public static DeviceInstanceHandle Zero => (DeviceInstanceHandle)IntPtr.Zero;
+    public static DeviceInstanceHandle Zero => (DeviceInstanceHandle)0U;
 
-    DeviceInstanceHandle(IntPtr value) => this.value = value;
+    DeviceInstanceHandle(uint value) => this.value = value;
 
-    public static IntPtr GetRawValue(DeviceInstanceHandle handle) => handle.value;
+    public static uint GetRawValue(DeviceInstanceHandle handle) => handle.value;
 
-    public static explicit operator DeviceInstanceHandle(IntPtr value) => new(value);
+    public static explicit operator DeviceInstanceHandle(uint value) => new(value);
 
     public static bool operator ==(DeviceInstanceHandle a, DeviceInstanceHandle b) => a.Equals(b);
 

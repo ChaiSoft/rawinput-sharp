@@ -6,7 +6,7 @@ namespace Linearstar.Windows.RawInput;
 
 public class HidReader
 {
-    readonly HidPCaps capabilities;
+    internal readonly HidPCaps capabilities;
 
     public IHidPreparsedData PreparsedData { get; }
     public int ValueCount => capabilities.NumberInputValueCaps;
@@ -15,14 +15,15 @@ public class HidReader
 
     public unsafe HidReader(IHidPreparsedData preparsedData)
     {
-        fixed (void* preparsedDataPtr = PreparsedData = preparsedData)
+        PreparsedData = preparsedData;
+        fixed (void* preparsedDataPtr = preparsedData)
         {
             capabilities = HidP.GetCaps((IntPtr)preparsedDataPtr);
 
-            var buttonCaps = HidP.GetButtonCaps((IntPtr)preparsedDataPtr, HidPReportType.Input);
+            var buttonCaps = HidP.GetButtonCaps((IntPtr)preparsedDataPtr, HidPReportType.HidP_Input);
             ButtonSets = buttonCaps.Select(i => new HidButtonSet(this, i)).ToArray();
 
-            var valueCaps = HidP.GetValueCaps((IntPtr)preparsedDataPtr, HidPReportType.Input);
+            var valueCaps = HidP.GetValueCaps((IntPtr)preparsedDataPtr, HidPReportType.HidP_Input);
             ValueSets = valueCaps.Select(i => new HidValueSet(this, i)).ToArray();
         }
     }

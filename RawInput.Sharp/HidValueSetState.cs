@@ -7,15 +7,15 @@ namespace Linearstar.Windows.RawInput;
 public class HidValueSetState : IEnumerable<HidValueState>
 {
     readonly byte[] report;
-    readonly int reportLength;
+    readonly uint reportLength;
 
     public HidValueSet ValueSet { get; }
 
-    public int[] CurrentValues => this.Select(x => x.CurrentValue).ToArray();
+    public uint[] CurrentValues => this.Select(x => x.CurrentValue).ToArray();
 
     public int?[] ScaledValues => this.Select(x => x.ScaledValue).ToArray();
 
-    internal HidValueSetState(HidValueSet valueSet, byte[] report, int reportLength)
+    internal HidValueSetState(HidValueSet valueSet, byte[] report, uint reportLength)
     {
         ValueSet = valueSet;
         this.report = report;

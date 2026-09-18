@@ -1,4 +1,5 @@
 ﻿using System;
+using Windows.Win32.UI.Input;
 
 namespace Linearstar.Windows.RawInput;
 
@@ -49,4 +50,11 @@ public enum RawInputDeviceFlags
     /// RIDEV_DEVNOTIFY. Enables the caller to receive WM_INPUT_DEVICE_CHANGE notifications for device arrival and device removal.
     /// </summary>
     DevNotify = 0x2000,
+}
+
+internal static partial class EnumConverter
+{
+    public static RAWINPUTDEVICE_FLAGS ToWindows(this RawInputDeviceFlags flags) => (RAWINPUTDEVICE_FLAGS)flags;
+
+    public static RawInputDeviceFlags FromNative(this RAWINPUTDEVICE_FLAGS flags) => (RawInputDeviceFlags)flags;
 }

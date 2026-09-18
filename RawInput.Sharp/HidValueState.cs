@@ -6,16 +6,16 @@ namespace Linearstar.Windows.RawInput;
 public class HidValueState
 {
     readonly byte[] report;
-    readonly int reportLength;
+    readonly uint reportLength;
 
     public HidValue Value { get; }
 
-    public unsafe int CurrentValue
+    public unsafe uint CurrentValue
     {
         get
         {
             fixed (void* preparsedData = Value.reader.PreparsedData)
-                return HidP.GetUsageValue((IntPtr)preparsedData, HidPReportType.Input, Value.valueCaps, Value.UsageAndPage.Usage, report, reportLength);
+                return HidP.GetUsageValue((IntPtr)preparsedData, HidPReportType.HidP_Input, Value.valueCaps, Value.UsageAndPage.Usage, report, reportLength);
         }
     }
 
@@ -24,7 +24,7 @@ public class HidValueState
         get
         {
             fixed (void* preparsedData = Value.reader.PreparsedData)
-                return HidP.TryGetScaledUsageValue((IntPtr)preparsedData, HidPReportType.Input, Value.valueCaps, Value.UsageAndPage.Usage, report, reportLength, out var value) == NtStatus.Success
+                return HidP.TryGetScaledUsageValue((IntPtr)preparsedData, HidPReportType.HidP_Input, Value.valueCaps, Value.UsageAndPage.Usage, report, reportLength, out var value) == NtStatus.HIDP_STATUS_SUCCESS
                     ? value
                     : null;
         }
@@ -42,7 +42,7 @@ public class HidValueState
         }
     }
 
-    internal HidValueState(HidValue value, byte[] report, int reportLength)
+    internal HidValueState(HidValue value, byte[] report, uint reportLength)
     {
         Value = value;
         this.report = report;
