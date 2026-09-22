@@ -17,8 +17,8 @@ public class RawInputMouseData : RawInputData
     {
         var header = Header;
         var ms = Mouse;
-        if (!MemoryMarshal.TryWrite(buffer, ref header)) return false;
-        return MemoryMarshal.TryWrite(buffer[HEADER_LENGTH..], ref ms);
+        if (!MemoryMarshal.TryWrite(buffer, in header)) return false;
+        return MemoryMarshal.TryWrite(buffer[HEADER_LENGTH..], in ms);
     }
 
     public override string ToString() =>

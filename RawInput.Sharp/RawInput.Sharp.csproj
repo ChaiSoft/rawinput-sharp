@@ -1,7 +1,7 @@
 ﻿<Project Sdk="Microsoft.NET.Sdk">
 
   <PropertyGroup>
-    <LangVersion>13.0</LangVersion>
+    <LangVersion>preview</LangVersion>
     <RootNamespace>Linearstar.Windows.RawInput</RootNamespace>
     <AllowUnsafeBlocks>true</AllowUnsafeBlocks>
     <Company>Linearstar</Company>
@@ -40,6 +40,22 @@
 			System.Diagnostics.CodeAnalysis.UnscopedRefAttribute,
 			System.Runtime.CompilerServices.OverloadResolutionPriorityAttribute,
 		</PolySharpExcludeGeneratedTypes>
+	</PropertyGroup>
+
+	<PropertyGroup Condition="'$(Configuration)|$(TargetFramework)|$(Platform)'=='Debug|net8.0|AnyCPU'">
+	  <NoWarn>1701;1702;CA1416</NoWarn>
+	</PropertyGroup>
+
+	<PropertyGroup Condition="'$(Configuration)|$(TargetFramework)|$(Platform)'=='Debug|netstandard2.0|AnyCPU'">
+	  <NoWarn>1701;1702;CA1416</NoWarn>
+	</PropertyGroup>
+
+	<PropertyGroup Condition="'$(Configuration)|$(TargetFramework)|$(Platform)'=='Release|net8.0|AnyCPU'">
+	  <NoWarn>1701;1702;CA1416</NoWarn>
+	</PropertyGroup>
+
+	<PropertyGroup Condition="'$(Configuration)|$(TargetFramework)|$(Platform)'=='Release|netstandard2.0|AnyCPU'">
+	  <NoWarn>1701;1702;CA1416</NoWarn>
 	</PropertyGroup>
 
   <ItemGroup>

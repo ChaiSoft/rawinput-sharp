@@ -103,10 +103,10 @@ public abstract class RawInputData
         unsafe { cbSize = sizeof(RAWINPUT); }
         int length = data.Length;
         var native = length * cbSize <= MAX_STACK ? stackalloc RAWINPUT[length] : new RAWINPUT[length];
-        for (int i = 0; i < length; i++)
-        {
+        //for (int i = 0; i < length; i++)
+        //{
 
-        }
+        //}
         User32.DefRawInputProc(native);
     }
 

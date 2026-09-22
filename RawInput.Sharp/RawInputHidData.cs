@@ -44,7 +44,7 @@ public class RawInputHidData : RawInputData
             return false;
 
         var header = Header;
-        MemoryMarshal.Write(buffer, ref header);
+        if (!MemoryMarshal.TryWrite(buffer, in header)) return false;
         return Hid.TryWrite(buffer[HEADER_LENGTH..]);
     }
 

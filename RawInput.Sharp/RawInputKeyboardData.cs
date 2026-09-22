@@ -18,8 +18,8 @@ public class RawInputKeyboardData : RawInputData
     {
         var header = Header;
         var kb = Keyboard;
-        if(!MemoryMarshal.TryWrite(buffer, ref header)) return false;
-        return MemoryMarshal.TryWrite(buffer[HEADER_LENGTH..], ref kb);
+        if(!MemoryMarshal.TryWrite(buffer, in header)) return false;
+        return MemoryMarshal.TryWrite(buffer[HEADER_LENGTH..], in kb);
     }
     public override string ToString() =>
         $"{{{Header}, {Keyboard}}}";

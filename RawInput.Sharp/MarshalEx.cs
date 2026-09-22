@@ -1,15 +1,16 @@
 ﻿using System;
+using System.Runtime.CompilerServices;
 using System.Runtime.InteropServices;
 
 namespace Linearstar.Windows.RawInput;
 
 static class MarshalEx
 {
-#if NET7_0_OR_GREATER
-    public static int SizeOf<T>() => Marshal.SizeOf<T>();
-#else
-    public static int SizeOf<T>() => Marshal.SizeOf(typeof(T));
-#endif
+//#if NET7_0_OR_GREATER
+//    public static int SizeOf<T>() => Marshal.SizeOf<T>();
+//#else
+//    public static int SizeOf<T>() => Marshal.SizeOf(typeof(T));
+//#endif
 
     public static string PtrToStringUni(ReadOnlySpan<byte> buffer)
     {
@@ -20,4 +21,15 @@ static class MarshalEx
         else
             return unicode.Slice(0, nullIndex).ToString();
     }
+
+#if !NET8_0_OR_GREATER
+    extension(MemoryMarshal)
+    {
+        public static bool TryWrite<T>(Span<byte> destination, in T value)
+        {
+            ref T rf = ref Unsafe.AsRef(value);
+            return MemoryMarshal.TryWrite(destination, in rf);
+        }
+    }
+#endif
 }
