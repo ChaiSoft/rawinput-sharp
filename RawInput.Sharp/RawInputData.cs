@@ -1,5 +1,7 @@
 ﻿using System;
 using System.Linq;
+using System.Runtime.CompilerServices;
+using System.Runtime.InteropServices;
 using Linearstar.Windows.RawInput.Native;
 using Windows.Win32.Foundation;
 using Windows.Win32.UI.Input;
@@ -12,6 +14,7 @@ public abstract class RawInputData
 
     public RawInputDeviceHandle DeviceHandle => (RawInputDeviceHandle)Header.hDevice;
     internal RawInputHeader Header { get; }
+    protected static readonly unsafe int HEADER_LENGTH = sizeof(RawInputHeader);
 
     public RawInputDevice? Device =>
         device ??= Header.hDevice != HANDLE.Null
@@ -43,61 +46,77 @@ public abstract class RawInputData
         }
     }
 
-    private static unsafe RawInputData ParseRawInputBufferItem(byte* ptr)
+    private const ushort MAX_STACK = 4096;
+
+    private static unsafe RawInputData ParseRawInputBufferItem(ref RAWINPUT ptr)
     {
-        var header = *(RawInputHeader*)ptr;
-        var headerSize = MarshalEx.SizeOf<RawInputHeader>();
-        var dataPtr = ptr + headerSize;
+        
+        var header = ptr.header;
+        ref var data = ref ptr.data;
 
         // RAWINPUT structure must be aligned by 8 bytes on WOW64
         // https://docs.microsoft.com/en-us/windows/win32/api/winuser/nf-winuser-getrawinputbuffer#remarks
-        if (EnvironmentEx.Is64BitProcess && EnvironmentEx.Is64BitOperatingSystem) dataPtr += 8;
+        if (!EnvironmentEx.Is64BitProcess && EnvironmentEx.Is64BitOperatingSystem)
+        {
+            data = ref Unsafe.AddByteOffset(ref data, 8);
+        }
 
         switch ((RID_DEVICE_INFO_TYPE)header.dwType)
         {
             case RID_DEVICE_INFO_TYPE.RIM_TYPEMOUSE:
-                return new RawInputMouseData(header, *(RawMouse*)dataPtr);
+                return new RawInputMouseData(header, data.mouse);
             case RID_DEVICE_INFO_TYPE.RIM_TYPEKEYBOARD:
-                return new RawInputKeyboardData(header, *(RawKeyboard*)dataPtr);
+                return new RawInputKeyboardData(header, data.keyboard);
             case RID_DEVICE_INFO_TYPE.RIM_TYPEHID:
-                throw new NotImplementedException();
-                //return RawInputHidData.Create(header, RawHid.FromPointer(dataPtr));
+                return RawInputHidData.Create(header, RawHid.FromRef(in data.hid));
             default:
                 throw new ArgumentException();
         }
     }
 
-    public static unsafe RawInputData[] GetBufferedData(int bufferSize = 8)
+    public static unsafe RawInputData[] GetBufferedData(int length = 8)
     {
-        throw new NotImplementedException();
-        //var itemSize = User32.GetRawInputBufferSize();
-        //if (itemSize == 0) return Array.Empty<RawInputData>();
+        int cbSize;
+        unsafe { cbSize = sizeof(RAWINPUT); }
 
-        //var bytes = new byte[itemSize * bufferSize];
+        Span<RAWINPUT> dataBuffer = length * cbSize <= MAX_STACK ? stackalloc RAWINPUT[length] : new RAWINPUT[length];
+        uint count = User32.GetRawInputBuffer(dataBuffer);
+        count.EnsureSuccess();
 
-        //fixed (byte* bytesPtr = bytes)
-        //{
-        //    var count = User32.GetRawInputBuffer((IntPtr)bytesPtr, (uint)bytes.Length);
-        //    if (count == 0) return new RawInputData[0];
+        var result = new RawInputData[count];
 
-        //    var result = new RawInputData[count];
+        ref RAWINPUT ptr = ref dataBuffer[0];
+        for (int i = 0; i < count; i++)
+        {
+            result[i] = ParseRawInputBufferItem(ref ptr);
+            ptr = ref Unsafe.AddByteOffset(ref ptr, Align(ptr.header.dwSize));
+        }
 
-        //    for (int i = 0, offset = 0; i < result.Length; i++)
-        //    {
-        //        var data = ParseRawInputBufferItem(bytesPtr + offset);
-
-        //        result[i] = data;
-        //        offset = Align(offset + data.Header.Size);
-        //    }
-
-        //    return result;
-        //}
+        return result;
     }
 
-    protected static int Align(int x) => (x + IntPtr.Size - 1) & ~(IntPtr.Size - 1);
+    private static uint Align(uint x) => (x + (uint)UIntPtr.Size - 1U) & ~((uint)UIntPtr.Size - 1U);
 
-    public static void DefRawInputProc(RawInputData[] data) =>
-        User32.DefRawInputProc(data.SelectMany(i => i.ToStructure()).ToArray());
+    public static void DefRawInputProc(RawInputData[] data)
+    {
+        int cbSize;
+        unsafe { cbSize = sizeof(RAWINPUT); }
+        int length = data.Length;
+        var native = length * cbSize <= MAX_STACK ? stackalloc RAWINPUT[length] : new RAWINPUT[length];
+        for (int i = 0; i < length; i++)
+        {
 
-    public abstract byte[] ToStructure();
+        }
+        User32.DefRawInputProc(native);
+    }
+
+    public abstract int Length { get; }
+    public abstract bool TryWrite(Span<byte> buffer);
+    public byte[] ToStructure()
+    {
+        var data = new byte[Align((uint)Length)];
+        if(!TryWrite(data))
+            throw new InvalidOperationException();
+        return data;
+    }
 }

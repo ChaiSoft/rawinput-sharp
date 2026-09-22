@@ -1,5 +1,7 @@
 ﻿using System;
+using System.Buffers.Binary;
 using System.Linq;
+using System.Runtime.CompilerServices;
 using System.Runtime.InteropServices;
 using Windows.Win32.UI.Input;
 
@@ -10,24 +12,28 @@ namespace Linearstar.Windows.RawInput.Native;
 /// </summary>
 public struct RawHid
 {
-    int dwSizeHid;
-    int dwCount;
-    byte[] rawData;
+    private int dwSizeHid;
+    private int dwCount;
+    private byte[] rawData;
 
     public int ElementSize => dwSizeHid;
     public int Count => dwCount;
     public unsafe byte[] RawData => rawData;
 
-    public static RawHid FromSpan(ReadOnlySpan<byte> span)
+    internal static RawHid FromRef(ref readonly RAWHID rawHid)
     {
-        ref readonly RAWHID rawHid = ref MemoryMarshal.Cast<byte, RAWHID>(span)[0];
-
         var result = new RawHid();
         result.dwSizeHid = checked((int)rawHid.dwSizeHid);
         result.dwCount = checked((int)rawHid.dwCount);
         result.rawData = rawHid.bRawData.AsSpan((int)rawHid.dwCount).ToArray();
 
         return result;
+    }
+
+    public static RawHid FromSpan(ReadOnlySpan<byte> span)
+    {
+        ref readonly RAWHID rawHid = ref MemoryMarshal.Cast<byte, RAWHID>(span)[0];
+        return FromRef(in rawHid);
     }
 
     public ArraySegment<byte>[] ToHidReports()
@@ -41,22 +47,19 @@ public struct RawHid
             result[i] = new ArraySegment<byte>(RawData, elementSize * i, elementSize);
         return result;
     }
-        
-    public unsafe byte[] ToStructure()
+
+
+    public int Length => Count * ElementSize + 2 * sizeof(uint);
+    public bool TryWrite(Span<byte> span)
     {
-        var result = new byte[dwSizeHid * dwCount + sizeof(int) * 2];
+        if (span.Length < Length) return false;
 
-        fixed (byte* resultPtr = result)
-        {
-            var intPtr = (int*)resultPtr;
-
-            intPtr[0] = dwSizeHid;
-            intPtr[1] = dwCount;
-        }
-
-        rawData.CopyTo(result, sizeof(int) * 2);
-
-        return result;
+        ref byte first = ref span[0];
+        ref RAWHID header = ref Unsafe.As<byte, RAWHID>(ref first);
+        header.dwSizeHid = (uint)dwSizeHid;
+        header.dwCount = (uint)dwCount;
+        RawData.CopyTo(span[(2 * sizeof(uint))..]);
+        return true;
     }
 
     public override string ToString() =>

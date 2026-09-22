@@ -1,4 +1,5 @@
-﻿using System.Runtime.InteropServices;
+﻿using System;
+using System.Runtime.InteropServices;
 using Linearstar.Windows.RawInput.Native;
 
 namespace Linearstar.Windows.RawInput;
@@ -11,19 +12,13 @@ public class RawInputMouseData : RawInputData
         : base(header) =>
         Mouse = mouse;
 
-    public override unsafe byte[] ToStructure()
+    public override unsafe int Length => sizeof(RawInputHeader) + sizeof(RawMouse);
+    public override bool TryWrite(Span<byte> buffer)
     {
-        var headerSize = MarshalEx.SizeOf<RawInputHeader>();
-        var mouseSize = MarshalEx.SizeOf<RawMouse>();
-        var bytes = new byte[headerSize + mouseSize];
-
-        fixed (byte* bytesPtr = bytes)
-        {
-            *(RawInputHeader*)bytesPtr = Header;
-            *(RawMouse*)(bytesPtr + headerSize) = Mouse;
-        }
-
-        return bytes;
+        var header = Header;
+        var ms = Mouse;
+        if (!MemoryMarshal.TryWrite(buffer, ref header)) return false;
+        return MemoryMarshal.TryWrite(buffer[HEADER_LENGTH..], ref ms);
     }
 
     public override string ToString() =>

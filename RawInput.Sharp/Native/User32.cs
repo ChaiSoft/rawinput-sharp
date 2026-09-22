@@ -210,11 +210,10 @@ internal static partial class User32
         return PInvoke.GetRawInputBuffer(buffer, ref size, HEADER_SIZE).EnsureSuccess();
     }
 
-    public static unsafe void DefRawInputProc(byte[] paRawInput)
+    public static unsafe void DefRawInputProc(ReadOnlySpan<RAWINPUT> paRawInput)
     {
-        throw new NotImplementedException();
-        //fixed (byte* buffer = paRawInput)
-        //    PInvoke.DefRawInputProc((IntPtr)buffer, paRawInput.Length, HEADER_SIZE);
+        if (PInvoke.DefRawInputProc(null, 0, HEADER_SIZE) < 0)      //Only verifies that the header side is as expected
+            throw new Win32ErrorException((int)WIN32_ERROR.ERROR_INVALID_PARAMETER);
     }
 
     public static bool EnsureSuccess(this BOOL result)

@@ -1,5 +1,7 @@
-﻿using System.Linq;
-using Linearstar.Windows.RawInput.Native;
+﻿using Linearstar.Windows.RawInput.Native;
+using System;
+using System.Linq;
+using System.Runtime.InteropServices;
 using Windows.Win32.Foundation;
 
 namespace Linearstar.Windows.RawInput;
@@ -34,19 +36,31 @@ public class RawInputHidData : RawInputData
         return new RawInputHidData(header, hid);
     }
 
-    public override unsafe byte[] ToStructure()
+    public override int Length => HEADER_LENGTH + Hid.Length;
+
+    public override bool TryWrite(Span<byte> buffer)
     {
-        var headerSize = MarshalEx.SizeOf<RawInputHeader>();
-        var hid = Hid.ToStructure();
-        var bytes = new byte[Align(headerSize + hid.Length)];
+        if (buffer.Length < Length)
+            return false;
 
-        fixed (byte* bytesPtr = bytes)
-            *(RawInputHeader*) bytesPtr = Header;
-            
-        hid.CopyTo(bytes, headerSize);
-
-        return bytes;
+        var header = Header;
+        MemoryMarshal.Write(buffer, ref header);
+        return Hid.TryWrite(buffer[HEADER_LENGTH..]);
     }
+
+    //public override unsafe byte[] ToStructure()
+    //{
+    //    var headerSize = MarshalEx.SizeOf<RawInputHeader>();
+    //    var hid = Hid.ToStructure();
+    //    var bytes = new byte[Align(headerSize + hid.Length)];
+
+    //    fixed (byte* bytesPtr = bytes)
+    //        *(RawInputHeader*) bytesPtr = Header;
+            
+    //    hid.CopyTo(bytes, headerSize);
+
+    //    return bytes;
+    //}
 
     public override string ToString() =>
         $"{{{Header}, {Hid}}}";
